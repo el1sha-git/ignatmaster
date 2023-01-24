@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  postgres:
+    container_name: ignatmaster_postgres
+    image: postgres:latest
+    env_file:
+      - .env
+    ports:
+      - "2354:5432"
+    volumes:
+        - ./postgres:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    container_name: ignatmaster_redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis:/data
+    restart: always
+
+  worker:
+    build:
+      context: .
+      dockerfile: celery.dockerfile
+    image: celery:4.0
+    command: "watchmedo auto-restart -d ./ -p '*.py' -- celery -A app worker --loglevel=info"
+    environment:
+      - BROKER_URL=redis://redis:6379/0
+      - RESULT_BACKEND=redis://redis:6379/0
+      - C_FORCE_ROOT=true
+    volumes:
+      - ./app:/app/
+    depends_on:
+      - redis
