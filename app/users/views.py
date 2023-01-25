@@ -13,6 +13,7 @@ from app.settings import FRONTEND_URL
 from .utils import encrypt_user, decrypt_user
 from .mixins import SerializerByMethodMixin
 from .tasks import send_email as send_email_task
+from app.celery import debug_task
 
 
 class UserView(mixins.RetrieveModelMixin, GenericAPIView):
@@ -96,8 +97,7 @@ class UserActivate(CommonUserActivateReset):
         url = f"{FRONTEND_URL}/activate?enc_id={enc_id}&token={token}"
         body = f"Hello {user.username}\nActivate account  link: \n{url}"
         subject = 'Activate account on IgnatMaster'
-        send_email_task(body, subject, [user.username])
-        print("Email sended")
+        send_email_task.delay(body, subject, [user.username])
 
 
 class ResetUserPassword(CommonUserActivateReset):
@@ -114,5 +114,5 @@ class ResetUserPassword(CommonUserActivateReset):
         url = f"{FRONTEND_URL}/reset-password?enc_id={enc_id}&token={token}"
         body = f"Hello {user.username}\nReset password link: \n{url}"
         subject = 'Reset password from IgnatMaster'
-        send_email_task(body, subject, [user.username])
-        print("Email sended")
+        send_email_task.delay(body, subject, [user.username])
+        debug_task.delay()
